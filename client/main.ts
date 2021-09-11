@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
+import { extendBorsh } from './borsh';
 import {
-  PublicKey,
   sendAndConfirmTransaction,
   Transaction,
   TransactionInstruction,
@@ -17,10 +17,11 @@ import {
   createMetadataAccount,
   createMetadataInstruction,
   mintToken,
+  readMetaData,
 } from './program';
-import { programIds } from './programIds';
 
 dotenv.config();
+extendBorsh();
 
 const PROGRAM_PATH = path.resolve(__dirname, '../dist/program');
 
@@ -112,6 +113,13 @@ async function main() {
     },
   );
   console.log('Transaction confirmed. Signature', signature);
+
+  // View added metadata
+  const metaData = await readMetaData({
+    connection,
+    metadataAccount,
+  });
+  console.log('Metadata', metaData);
 }
 
 main().then(
