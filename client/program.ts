@@ -1,4 +1,4 @@
-import { serialize } from 'borsh';
+import { deserializeUnchecked, serialize } from 'borsh';
 import { Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import {
   PublicKey,
@@ -8,7 +8,13 @@ import {
 } from '@solana/web3.js';
 import type { Connection as ConnectionType, Signer } from '@solana/web3.js';
 import { SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID } from './programIds';
-import { CreateMetadataArgs, Data, METADATA_SCHEMA } from './metadata';
+import {
+  CreateMetadataArgs,
+  Data,
+  Metadata,
+  MetadataKey,
+  METADATA_SCHEMA,
+} from './metadata';
 import { findProgramAddress } from './utils';
 
 /**
@@ -185,8 +191,32 @@ export function createAssociatedTokenAccountInstruction({
   });
 }
 
-// export async function createMetaData({
-//   programId,
-// }: {
-//   programId: PublicKey;
-// }): Promise<Token> {}
+// eslint-disable-next-line no-control-regex
+const METADATA_REPLACE = new RegExp('\u0000', 'g');
+export async function readMetaData({
+  connection,
+  metadataAccount,
+}: {
+  connection: ConnectionType;
+  metadataAccount: PublicKey;
+}): Promise<Metadata> {
+  const accountInfo = await connection.getAccountInfo(metadataAccount);
+  console.log('====', metadataAccount.toBase58());
+  if (!accountInfo) {
+    throw new Error('No accountInfo for this public key');
+  }
+  if (accountInfo.data[0] === MetadataKey.MetadataV1) {
+    console.log('This is MetadataV1');
+  }
+
+  const metadata = deserializeUnchecked(
+    METADATA_SCHEMA,
+    Metadata,
+    accountInfo.data,
+  );
+  // remove puffs
+  metadata.data.name = metadata.data.name.replace(METADATA_REPLACE, '');
+  metadata.data.uri = metadata.data.uri.replace(METADATA_REPLACE, '');
+  metadata.data.symbol = metadata.data.symbol.replace(METADATA_REPLACE, '');
+  return metadata;
+}
