@@ -18,6 +18,14 @@ pub struct CreateMetadataAccountArgs {
 
 #[derive(BorshSerialize, BorshDeserialize, Clone)]
 pub enum MetadataInstruction {
+  /// Create Metadata object.
+  ///   0. `[writable]`  Metadata key (pda of ['metadata', program id, mint id])
+  ///   1. `[]` Mint of token asset
+  ///   2. `[signer]` Mint authority
+  ///   3. `[signer]` payer
+  ///   4. `[]` update authority info
+  ///   5. `[]` System program
+  ///   6. `[]` Rent info
   CreateMetadataAccount(CreateMetadataAccountArgs),
 }
 

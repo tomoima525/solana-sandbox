@@ -1,0 +1,30 @@
+
+[package]
+name = "token-metadata"
+version = "0.1.0"
+description = "TBU"
+authors = ["Tomoaki Imai <tomoima525@gmail.com>"]
+repository = "TBU"
+license = "Apache-2.0"
+edition = "2018"
+
+[features]
+no-entrypoint = []
+
+[dependencies]
+arrayref = "0.3.6"
+borsh = "0.9.1"
+borsh-derive = "0.9.1"
+num-derive = "0.3"
+num-traits = "0.2.14"
+solana-program = "=1.7.9"
+spl-token = { version="3.1.1", features = [ "no-entrypoint" ] }
+thiserror = "1.0.28"
+
+[dev-dependencies]
+solana-program-test = "=1.7.9"
+solana-sdk = "=1.7.9"
+
+[lib]
+name = "tokenmetadataprogram"
+crate-type = ["cdylib", "lib"]
