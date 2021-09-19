@@ -11,6 +11,7 @@ use {
     sysvar::{rent::Rent, Sysvar},
   },
   spl_token::{instruction, state::Account as TokenAccount},
+  std::cell::RefMut,
 };
 
 fn assert_owned_by(account: &AccountInfo, owner: &Pubkey) -> ProgramResult {
@@ -19,6 +20,22 @@ fn assert_owned_by(account: &AccountInfo, owner: &Pubkey) -> ProgramResult {
   } else {
     Ok(())
   }
+}
+
+fn close_escrow_account(main_account: &AccountInfo, escrow_account: &AccountInfo) -> ProgramResult {
+  // Return lamports to main account
+  let returned_amount: u64 = main_account
+    .lamports()
+    .checked_add(escrow_account.lamports())
+    .ok_or(error::EscrowError::AmountOverflow)?;
+
+  let mut lamports: RefMut<&mut u64> = main_account.lamports.borrow_mut();
+
+  **lamports = returned_amount;
+
+  **escrow_account.lamports.borrow_mut() = 0;
+  escrow_account.data.replace(&mut []);
+  Ok(())
 }
 
 pub struct Processor;
@@ -229,11 +246,7 @@ impl Processor {
     )?;
 
     // Finally closing escrow account
-    **initializer_main_account.lamports.borrow_mut() = initializer_main_account
-      .lamports()
-      .checked_add(escrow_account.lamports())
-      .ok_or(error::EscrowError::AmountOverflow)?;
-    **escrow_account.lamports.borrow_mut() = 0;
+    close_escrow_account(&initializer_main_account, &escrow_account)?;
     Ok(())
   }
 }
