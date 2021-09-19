@@ -1,5 +1,5 @@
-import { METADATA_PROGRAM_ID } from './programIds';
-import { getEdition } from './utils';
+import { METADATA_PROGRAM_ID } from '../programs/programIds';
+import { getEdition } from '../programs/programAddress';
 
 export type StringPublicKey = string;
 

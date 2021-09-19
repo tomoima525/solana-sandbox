@@ -3,10 +3,10 @@
 import { PublicKey } from '@solana/web3.js';
 import { BinaryReader, BinaryWriter } from 'borsh';
 import base58 from 'bs58';
-import { StringPublicKey } from './metadata';
+import { StringPublicKey } from '../schema/metadata';
 
 export const extendBorsh = (): void => {
-  console.log('===extend');
+  console.log('extend borsh functionality to support serializing Pubkey');
   (BinaryReader.prototype as any).readPubkey = function () {
     const reader = this as unknown as BinaryReader;
     const array = reader.readFixedArray(32);
@@ -21,7 +21,7 @@ export const extendBorsh = (): void => {
   (BinaryReader.prototype as any).readPubkeyAsString = function () {
     const reader = this as unknown as BinaryReader;
     const array = reader.readFixedArray(32);
-    return base58.encode(array) as StringPublicKey;
+    return base58.encode(array);
   };
 
   (BinaryWriter.prototype as any).writePubkeyAsString = function (

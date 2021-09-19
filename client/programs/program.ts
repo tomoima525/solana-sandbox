@@ -7,15 +7,14 @@ import {
   TransactionInstruction,
 } from '@solana/web3.js';
 import type { Connection as ConnectionType, Signer } from '@solana/web3.js';
-import { SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID } from './programIds';
 import {
   CreateMetadataArgs,
   Data,
   Metadata,
   MetadataKey,
   METADATA_SCHEMA,
-} from './metadata';
-import { findProgramAddress } from './utils';
+} from '../schema/metadata';
+import { findProgramAddress } from './programAddress';
 
 /**
  * Create Token mint to the payer account
@@ -132,62 +131,6 @@ export function createMetadataInstruction({
     keys,
     programId: metadataProgramId,
     data: txnData,
-  });
-}
-
-// TODO: remove. Not used
-export function createAssociatedTokenAccountInstruction({
-  associatedTokenAddress,
-  payer,
-  walletAddress,
-  splTokenMintAddress,
-}: {
-  associatedTokenAddress: PublicKey;
-  payer: PublicKey;
-  walletAddress: PublicKey;
-  splTokenMintAddress: PublicKey;
-}): TransactionInstruction {
-  const keys = [
-    {
-      pubkey: payer,
-      isSigner: true,
-      isWritable: true,
-    },
-    {
-      pubkey: associatedTokenAddress,
-      isSigner: false,
-      isWritable: true,
-    },
-    {
-      pubkey: walletAddress,
-      isSigner: false,
-      isWritable: false,
-    },
-    {
-      pubkey: splTokenMintAddress,
-      isSigner: false,
-      isWritable: false,
-    },
-    {
-      pubkey: SystemProgram.programId,
-      isSigner: false,
-      isWritable: false,
-    },
-    {
-      pubkey: TOKEN_PROGRAM_ID,
-      isSigner: false,
-      isWritable: false,
-    },
-    {
-      pubkey: SYSVAR_RENT_PUBKEY,
-      isSigner: false,
-      isWritable: false,
-    },
-  ];
-  return new TransactionInstruction({
-    keys,
-    programId: SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID,
-    data: Buffer.from([]),
   });
 }
 

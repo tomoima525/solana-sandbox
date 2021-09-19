@@ -1,5 +1,5 @@
 import { PublicKey } from '@solana/web3.js';
-import { StringPublicKey } from './metadata';
+import { StringPublicKey } from '../schema/metadata';
 
 export async function findProgramAddress(
   seeds: (Buffer | Uint8Array)[],
