@@ -12,7 +12,7 @@ use {
 #[derive(BorshSerialize, BorshDeserialize, Debug, Clone)]
 pub struct EscrowReceive {
   /// The amount Receiver expects to receive
-  amount: u64,
+  pub amount: u64,
 }
 
 pub struct Escrow {

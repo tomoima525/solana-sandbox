@@ -7,7 +7,12 @@ import os from 'os';
 import fs from 'mz/fs';
 import path from 'path';
 import yaml from 'yaml';
-import { Connection, Keypair, PublicKey } from '@solana/web3.js';
+import {
+  Connection,
+  Keypair,
+  LAMPORTS_PER_SOL,
+  PublicKey,
+} from '@solana/web3.js';
 
 /**
  * @private
@@ -78,4 +83,18 @@ export async function createKeypairFromFile(
   const secretKeyString = await fs.readFile(filePath, { encoding: 'utf8' });
   const secretKey = Uint8Array.from(JSON.parse(secretKeyString));
   return Keypair.fromSecretKey(secretKey);
+}
+
+export async function createNewWalletWithSol(
+  connection: Connection,
+  sol: number,
+): Promise<Keypair> {
+  const newWallet = Keypair.generate();
+  const newAirdropSignature = await connection.requestAirdrop(
+    newWallet.publicKey,
+    LAMPORTS_PER_SOL * sol,
+  );
+  await connection.confirmTransaction(newAirdropSignature);
+
+  return newWallet;
 }

@@ -1,6 +1,11 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { deserializeUnchecked, serialize } from 'borsh';
-import { Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import BN from 'bn.js';
+import { AccountLayout, Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import {
+  Connection,
+  Keypair,
   PublicKey,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
@@ -14,7 +19,13 @@ import {
   MetadataKey,
   METADATA_SCHEMA,
 } from '../schema/metadata';
+import {
+  InitEscrowdataArgs,
+  Escrowdata,
+  INIT_ESCROW_SCHEMA,
+} from '../schema/escrowdata';
 import { findProgramAddress } from './programAddress';
+import { ESCROW_ACCOUNT_DATA_LAYOUT } from '../utils/escrowLayout';
 
 /**
  * Create Token mint to the payer account
@@ -130,6 +141,196 @@ export function createMetadataInstruction({
   return new TransactionInstruction({
     keys,
     programId: metadataProgramId,
+    data: txnData,
+  });
+}
+
+/**
+ * Create MintTokenAccount
+ * Token Account that holds amounts to send to
+ * owner: payer(initializer)
+ * authorizer: payer(initializer)
+ */
+export async function createMintTokenAccount({
+  connection,
+  payer,
+  amount,
+}: {
+  connection: Connection;
+  payer: Signer;
+  amount: number;
+}): Promise<[PublicKey, Token]> {
+  const mintToken = await Token.createMint(
+    connection,
+    payer,
+    payer.publicKey,
+    payer.publicKey,
+    0, // Consider it as NFT
+    TOKEN_PROGRAM_ID,
+  );
+  const account = await mintToken.createAccount(payer.publicKey);
+  await mintToken.mintTo(account, payer, [], amount);
+  return [account, mintToken];
+}
+
+/**
+ * Receiver MintTokenAccount. Nothing is minted
+ * @returns
+ */
+export async function createMintTokenReceiverAccount({
+  connection,
+  payer,
+}: {
+  connection: Connection;
+  payer: Signer;
+}): Promise<[PublicKey, Token]> {
+  const mintToken = await Token.createMint(
+    connection,
+    payer,
+    payer.publicKey,
+    payer.publicKey,
+    0, // Consider it as NFT
+    TOKEN_PROGRAM_ID,
+  );
+  const account = await mintToken.createAccount(payer.publicKey);
+  return [account, mintToken];
+}
+
+/**
+ * Initialize TokenAccount before Escrow
+ * 1. Initialize temp TokenAccount as MintTokenAccount
+ *   -> owner: Payer(initializer)
+ * 2. Transfer tokens to TempAccount from MintToken Account
+ */
+export function initAccountInstruction({
+  tempTokenAccountPublicKey,
+  mint,
+  mintTokenAccount,
+  payer,
+  amount,
+}: {
+  tempTokenAccountPublicKey: PublicKey;
+  mint: Token;
+  mintTokenAccount: PublicKey;
+  payer: Signer;
+  amount: number;
+}): TransactionInstruction[] {
+  const initTempAccountInstruction = Token.createInitAccountInstruction(
+    TOKEN_PROGRAM_ID,
+    mint.publicKey,
+    tempTokenAccountPublicKey,
+    payer.publicKey,
+  );
+  const transferTokensToTempAccInstruction = Token.createTransferInstruction(
+    TOKEN_PROGRAM_ID,
+    mintTokenAccount,
+    tempTokenAccountPublicKey,
+    payer.publicKey,
+    [],
+    amount,
+  );
+
+  return [initTempAccountInstruction, transferTokensToTempAccInstruction];
+}
+
+export async function createAccountInstruction({
+  connection,
+  tokenAccount,
+  payer,
+}: {
+  connection: Connection;
+  tokenAccount: Keypair;
+  payer: Signer;
+}): Promise<TransactionInstruction> {
+  // https://github.com/solana-labs/solana-program-library/blob/master/token/js/client/token.js#L356
+  return SystemProgram.createAccount({
+    programId: TOKEN_PROGRAM_ID,
+    space: AccountLayout.span,
+    lamports: await connection.getMinimumBalanceForRentExemption(
+      AccountLayout.span,
+      'singleGossip',
+    ),
+    fromPubkey: payer.publicKey,
+    newAccountPubkey: tokenAccount.publicKey,
+  });
+}
+
+export async function createEscrowAccountInstruction({
+  connection,
+  escrowAccount,
+  payer,
+  programId,
+}: {
+  connection: Connection;
+  escrowAccount: Keypair;
+  payer: Signer;
+  programId: PublicKey;
+}): Promise<TransactionInstruction> {
+  return SystemProgram.createAccount({
+    programId,
+    space: ESCROW_ACCOUNT_DATA_LAYOUT.span,
+    lamports: await connection.getMinimumBalanceForRentExemption(
+      ESCROW_ACCOUNT_DATA_LAYOUT.span,
+      'singleGossip',
+    ),
+    fromPubkey: payer.publicKey,
+    newAccountPubkey: escrowAccount.publicKey,
+  });
+}
+export function createInitEscrowInstruction({
+  initializer,
+  tempTokenAccount,
+  receiveTokenAccount,
+  escrowAccount,
+  escrowProgramId,
+  amount,
+}: {
+  initializer: PublicKey;
+  tempTokenAccount: PublicKey;
+  receiveTokenAccount: PublicKey;
+  escrowAccount: PublicKey;
+  escrowProgramId: PublicKey;
+  amount: number;
+}): TransactionInstruction {
+  const data = new Escrowdata(new BN(amount));
+  const value = new InitEscrowdataArgs({ data });
+  const txnData = Buffer.from(serialize(INIT_ESCROW_SCHEMA, value));
+  const keys = [
+    {
+      pubkey: initializer,
+      isSigner: true,
+      isWritable: false,
+    },
+    {
+      pubkey: tempTokenAccount,
+      isSigner: false,
+      isWritable: true,
+    },
+    {
+      pubkey: receiveTokenAccount,
+      isSigner: false,
+      isWritable: false,
+    },
+    {
+      pubkey: escrowAccount,
+      isSigner: false,
+      isWritable: true,
+    },
+    {
+      pubkey: SYSVAR_RENT_PUBKEY,
+      isSigner: false,
+      isWritable: false,
+    },
+    {
+      pubkey: TOKEN_PROGRAM_ID,
+      isSigner: false,
+      isWritable: false,
+    },
+  ];
+
+  return new TransactionInstruction({
+    keys,
+    programId: escrowProgramId,
     data: txnData,
   });
 }

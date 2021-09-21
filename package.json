@@ -35,6 +35,7 @@
     "typescript": "^4.4.2"
   },
   "dependencies": {
+    "@solana/buffer-layout": "^3.0.0",
     "@solana/spl-token": "^0.1.8",
     "@solana/web3.js": "^1.25.0",
     "borsh": "^0.6.0",
