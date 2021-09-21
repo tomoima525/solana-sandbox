@@ -11,6 +11,12 @@ pub struct InitEscrowArgs {
   pub data: EscrowReceive,
 }
 
+#[repr(C)]
+#[derive(BorshSerialize, BorshDeserialize, Debug, Clone)]
+pub struct ExchangeArgs {
+  pub data: EscrowReceive,
+}
+
 #[derive(BorshSerialize, BorshDeserialize, Clone)]
 pub enum EscrowInstruction {
   /// Starts the trade by creating and populating escrow account
@@ -20,7 +26,8 @@ pub enum EscrowInstruction {
   /// 3. `[writable]` escrow account
   /// 4. `[]` Rent sysvar(An account that provides cluster info. In this case check if other account are rent exempt)
   /// 5. `[]` The token prograrm
-  InitEscrow { amount: u64 },
+  // InitEscrow { amount: u64 },
+  InitEscrow(InitEscrowArgs),
 
   /// Accept trade
   /// 0. `[signer]` The account of the person taking the trade
@@ -32,30 +39,30 @@ pub enum EscrowInstruction {
   /// 6. `[writable]` The escrow account holding the escrow info
   /// 7. `[]` The token program
   /// 8. `[]` The PDA account
-  Exchange { amount: u64 },
+  Exchange(ExchangeArgs),
 }
 
-impl EscrowInstruction {
-  pub fn unpack(input: &[u8]) -> Result<Self, ProgramError> {
-    let (tag, rest) = input.split_first().ok_or(InvalidInstruction)?;
+// impl EscrowInstruction {
+//   pub fn unpack(input: &[u8]) -> Result<Self, ProgramError> {
+//     let (tag, rest) = input.split_first().ok_or(InvalidInstruction)?;
 
-    Ok(match tag {
-      0 => Self::InitEscrow {
-        amount: Self::unpack_amount(rest)?,
-      },
-      1 => Self::Exchange {
-        amount: Self::unpack_amount(rest)?,
-      },
-      _ => return Err(InvalidInstruction.into()),
-    })
-  }
+//     Ok(match tag {
+//       0 => Self::InitEscrow {
+//         amount: Self::unpack_amount(rest)?,
+//       },
+//       1 => Self::Exchange {
+//         amount: Self::unpack_amount(rest)?,
+//       },
+//       _ => return Err(InvalidInstruction.into()),
+//     })
+//   }
 
-  pub fn unpack_amount(input: &[u8]) -> Result<u64, ProgramError> {
-    let amount = input
-      .get(..8)
-      .and_then(|slice| slice.try_into().ok())
-      .map(u64::from_le_bytes)
-      .ok_or(InvalidInstruction)?;
-    Ok(amount)
-  }
-}
+//   pub fn unpack_amount(input: &[u8]) -> Result<u64, ProgramError> {
+//     let amount = input
+//       .get(..8)
+//       .and_then(|slice| slice.try_into().ok())
+//       .map(u64::from_le_bytes)
+//       .ok_or(InvalidInstruction)?;
+//     Ok(amount)
+//   }
+// }

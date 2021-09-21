@@ -1,5 +1,6 @@
 use {
   crate::{error, instruction::EscrowInstruction, state::Escrow},
+  borsh::BorshDeserialize,
   solana_program::{
     account_info::{next_account_info, AccountInfo},
     entrypoint::ProgramResult,
@@ -45,17 +46,25 @@ impl Processor {
     accounts: &[AccountInfo],
     instruction_data: &[u8],
   ) -> ProgramResult {
-    let instruction = EscrowInstruction::unpack(instruction_data)?;
+    //let instruction = EscrowInstruction::unpack(instruction_data)?;
+    let instruction = EscrowInstruction::try_from_slice(instruction_data)?;
 
     match instruction {
-      EscrowInstruction::InitEscrow { amount } => {
+      EscrowInstruction::InitEscrow(args) => {
         msg!("Instruction: Init Escrow");
-        Self::process_init_escrow(program_id, accounts, amount)
+        Self::process_init_escrow(program_id, accounts, args.data.amount)
       }
-      EscrowInstruction::Exchange { amount } => {
+      EscrowInstruction::Exchange(args) => {
         msg!("Instruction: Init Escrow");
-        Self::process_exchange(program_id, accounts, amount)
-      }
+        Self::process_exchange(program_id, accounts, args.data.amount)
+      } // EscrowInstruction::InitEscrow { amount } => {
+        //   msg!("Instruction: Init Escrow");
+        //   Self::process_init_escrow(program_id, accounts, amount)
+        // }
+        // EscrowInstruction::Exchange { amount } => {
+        //   msg!("Instruction: Init Escrow");
+        //   Self::process_exchange(program_id, accounts, amount)
+        // }
     }
   }
 

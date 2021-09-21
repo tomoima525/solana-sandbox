@@ -6,6 +6,7 @@
     }
   },
   "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
     "noImplicitAny": false,
     "declaration": true,
     "moduleResolution": "node",
