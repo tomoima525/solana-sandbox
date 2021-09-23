@@ -10,6 +10,12 @@ Currently implemented under `rust` directory
 
 - The code is mostly referenced from [metaplex](https://github.com/metaplex-foundation/metaplex/tree/master/rust/token-metadata)
 
+### Simulate Escrow
+
+- Idea is from [paulx's blog](https://paulx.dev/blog/2021/01/14/programming-on-solana-an-introduction) but following a real-world usecase
+  - Use wallets to manage Accounts
+  - Use Associated Token Account to transfer tokens
+
 ## Client
 
 ### Mint & add metadata on NFT
@@ -57,8 +63,14 @@ Program Id: zvM2...
 
 The command above will generate `solanaprogram-keypair.json` which will be used in the client code
 
-- Run
+### Test Escrow
 
 ```
-$ yarn start
+$ yarn start:escrow
+```
+
+### Test Metadata
+
+```
+$ yarn start:metadata
 ```
