@@ -17,15 +17,18 @@ export const viewAccountInfo = async (
   );
 };
 
-export const viewMintInfo = async (token: Token): Promise<void> => {
-  const mintInfo = await token.getMintInfo();
-
+export const viewMintInfo = async ({
+  token,
+  account,
+}: {
+  token: Token;
+  account: PublicKey;
+}): Promise<void> => {
+  const mintInfo = await token.getAccountInfo(account);
   console.log(
-    `Mint:${token.publicKey.toBase58()}\n authority:${
-      mintInfo.mintAuthority?.toBase58() || ''
-    }\n amount:${mintInfo.supply.toString()}\n isInitialized:${
-      mintInfo.isInitialized ? 'true' : 'false'
-    }`,
+    `Mint:${token.publicKey.toBase58()}
+      owner:${mintInfo.owner.toBase58()} 
+      amount:${mintInfo.amount.toNumber()}`,
   );
 };
 
@@ -45,17 +48,17 @@ export const viewEscrowState = async (
   ) as EscrowLayout;
   const isInitialized = decodedEscrowState.isInitialized ? 'true' : 'false';
 
-  console.log(`escrowAccountPubkey: ${escrowAccount.toBase58()}\n
-    isInitialized: ${isInitialized}\n 
+  console.log(`escrowAccountPubkey: ${escrowAccount.toBase58()}
+    isInitialized: ${isInitialized}
     initializerAccountPubkey: ${new PublicKey(
       decodedEscrowState.initializerPubkey,
-    ).toBase58()}\n 
+    ).toBase58()}
     XTokenTempAccountPubkey: ${new PublicKey(
       decodedEscrowState.initializerTempTokenAccountPubkey,
-    ).toBase58()}\n 
+    ).toBase58()} 
     initializerYTokenAccount: ${new PublicKey(
       decodedEscrowState.initializerReceivingTokenAccountPubkey,
-    ).toBase58()}\n 
+    ).toBase58()} 
     expectedAmount: ${new BN(
       decodedEscrowState.expectedAmount,
       10,

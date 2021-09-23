@@ -33,7 +33,7 @@ impl IsInitialized for Escrow {
 }
 
 impl Pack for Escrow {
-  /// 1 (bool) + 3 * 32 (Pubkey) å+ 1 * 8 (u64) = 105
+  /// 1 (bool) + 3 * 32 (Pubkey) + 1 * 8 (u64) = 105
   const LEN: usize = 105;
   fn unpack_from_slice(src: &[u8]) -> Result<Self, ProgramError> {
     let src = array_ref![src, 0, Escrow::LEN];

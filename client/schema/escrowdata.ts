@@ -35,3 +35,32 @@ export const INIT_ESCROW_SCHEMA = new Map<any, any>([
     },
   ],
 ]);
+
+export class TradeEscrowdataArgs {
+  instruction = 1;
+  data: Escrowdata;
+
+  constructor(args: { data: Escrowdata }) {
+    this.data = args.data;
+  }
+}
+
+export const TRADE_ESCROW_SCHEMA = new Map<any, any>([
+  [
+    TradeEscrowdataArgs,
+    {
+      kind: 'struct',
+      fields: [
+        ['instruction', 'u8'],
+        ['data', Escrowdata],
+      ],
+    },
+  ],
+  [
+    Escrowdata,
+    {
+      kind: 'struct',
+      fields: [['amount', 'u64']],
+    },
+  ],
+]);

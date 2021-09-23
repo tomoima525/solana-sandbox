@@ -1,97 +1,82 @@
 import {
+  Connection,
   Keypair,
+  PublicKey,
   sendAndConfirmTransaction,
   Transaction,
   TransactionInstruction,
 } from '@solana/web3.js';
-import path from 'path';
 import {
   createAccountInstruction,
+  createAssociatedAccount,
   createEscrowAccountInstruction,
   createInitEscrowInstruction,
-  createMintTokenAccount,
-  createMintTokenReceiverAccount,
   initAccountInstruction,
-} from './programs/program';
-import { viewAccountInfo, viewEscrowState, viewMintInfo } from './utils/info';
-import {
-  checkProgram,
-  createKeypairFromFile,
-  createNewWalletWithSol,
-  establishConnection,
-  getRpcUrl,
-} from './utils/connections';
+} from './programs/escrow';
+import { viewAccountInfo, viewEscrowState } from './utils/info';
+import { Token } from '@solana/spl-token';
 
-const PROGRAM_PATH = path.resolve(__dirname, '../rust/target/deploy');
-
-/**
- * Path to the keypair of the deployed program.
- * This file is created when running `solana program deploy dist/program/solanaprogram.so`
- */
-const PROGRAM_KEYPAIR_PATH = path.join(PROGRAM_PATH, 'escrow-keypair.json');
-const WALLET_PATH = path.join(process.env.WALLET_DIR as string, 'id.json');
-
-export async function simulateEscrow(): Promise<void> {
+type Result = {
+  escrowAccountAddressString: string;
+};
+export async function simulateInitEscrow({
+  connection,
+  initializer,
+  initializerMint,
+  initializerMintTokenAccount,
+  programKeypair,
+  taker,
+  takerMint,
+  initializerReceiveAmount,
+  initializerSendAmount,
+}: {
+  connection: Connection;
+  initializer: Keypair;
+  initializerMint: Token;
+  initializerMintTokenAccount: PublicKey;
+  programKeypair: Keypair;
+  taker: Keypair;
+  takerMint: Token;
+  initializerSendAmount: number;
+  initializerReceiveAmount: number;
+}): Promise<Result> {
   const instructions: TransactionInstruction[] = [];
-  console.log('Start...');
-  const url = await getRpcUrl();
-  console.log('Success', { url });
 
-  // Check Program is deployed.
-  const programKeypair = await createKeypairFromFile(PROGRAM_KEYPAIR_PATH);
-  const connection = await establishConnection();
-  await checkProgram(connection, programKeypair.publicKey);
+  const associatedAccountForTaker = await createAssociatedAccount({
+    mintToken: initializerMint,
+    owner: taker.publicKey,
+  });
+  console.log(
+    'Created Associated Token Account for Taker',
+    associatedAccountForTaker.address.toBase58(),
+  );
 
-  console.log('Retrieve Wallet');
-
-  const payer = await createKeypairFromFile(WALLET_PATH);
-
-  console.log('payer', payer.publicKey.toBase58());
-
-  const walletAccount = await connection.getAccountInfo(payer.publicKey);
-  if (walletAccount?.lamports === 0) {
-    throw new Error(
-      'This wallet does not have enough balance to request transaction',
-    );
-  }
-
-  const amount = 1;
-  const taker = await createNewWalletWithSol(connection, 3);
-
-  const takerBalance = await connection.getBalance(taker.publicKey);
-  console.log('Created taker and airdrop some balance', takerBalance);
-
-  // Create Mint Token Account that has token to transfer
-  console.log('Create Mint Token Account');
-  const [mintTokenAccount, mint] = await createMintTokenAccount({
-    connection,
-    payer,
-    amount,
+  const associatedAccountForReceiving = await createAssociatedAccount({
+    mintToken: takerMint,
+    owner: initializer.publicKey,
   });
 
-  console.log('Create Receiver MintToken Account');
-  const [receiverMintTokenAccount] = await createMintTokenReceiverAccount({
-    connection,
-    payer,
-  });
-
+  console.log(
+    'Created Associated Token Account for Initializer',
+    associatedAccountForReceiving.address.toBase58(),
+  );
   console.log('Create temp Account');
   const tempTokenAccount = Keypair.generate();
   instructions.push(
     await createAccountInstruction({
       connection,
       tokenAccount: tempTokenAccount,
-      payer,
+      payer: initializer,
     }),
   );
 
   instructions.push(
     ...initAccountInstruction({
       tempTokenAccountPublicKey: tempTokenAccount.publicKey,
-      payer,
-      mint,
-      mintTokenAccount,
-      amount,
+      payer: initializer,
+      mint: initializerMint,
+      mintTokenAccount: initializerMintTokenAccount,
+      amount: initializerSendAmount,
     }),
   );
 
@@ -101,7 +86,7 @@ export async function simulateEscrow(): Promise<void> {
     await createEscrowAccountInstruction({
       connection,
       escrowAccount,
-      payer,
+      payer: initializer,
       programId: programKeypair.publicKey,
     }),
   );
@@ -109,12 +94,12 @@ export async function simulateEscrow(): Promise<void> {
   console.log('Initialize Escrow');
   instructions.push(
     createInitEscrowInstruction({
-      initializer: payer.publicKey,
+      initializer: initializer.publicKey,
       tempTokenAccount: tempTokenAccount.publicKey,
-      receiveTokenAccount: receiverMintTokenAccount,
+      receiveTokenAccount: associatedAccountForReceiving.address,
       escrowAccount: escrowAccount.publicKey,
       escrowProgramId: programKeypair.publicKey,
-      amount,
+      amount: initializerReceiveAmount,
     }),
   );
 
@@ -124,7 +109,7 @@ export async function simulateEscrow(): Promise<void> {
   const signature = await sendAndConfirmTransaction(
     connection,
     transaction,
-    [payer, tempTokenAccount, escrowAccount],
+    [initializer, tempTokenAccount, escrowAccount],
     {
       commitment: 'confirmed',
     },
@@ -135,8 +120,9 @@ export async function simulateEscrow(): Promise<void> {
     tempTokenAccount.publicKey,
     'tempTokenAccount',
   );
-  await viewAccountInfo(connection, mintTokenAccount, 'MintTokenAccount');
   await viewAccountInfo(connection, escrowAccount.publicKey, 'EscrowAccount');
-  await viewMintInfo(mint);
   await viewEscrowState(connection, escrowAccount.publicKey);
+  return {
+    escrowAccountAddressString: escrowAccount.publicKey.toBase58(),
+  };
 }

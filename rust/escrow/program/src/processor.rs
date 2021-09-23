@@ -55,7 +55,7 @@ impl Processor {
         Self::process_init_escrow(program_id, accounts, args.data.amount)
       }
       EscrowInstruction::Exchange(args) => {
-        msg!("Instruction: Init Escrow");
+        msg!("Instruction: Exchange Escrow");
         Self::process_exchange(program_id, accounts, args.data.amount)
       } // EscrowInstruction::InitEscrow { amount } => {
         //   msg!("Instruction: Init Escrow");
@@ -172,7 +172,8 @@ impl Processor {
 
     let escrow_account: &AccountInfo = next_account_info(account_info_iter)?;
 
-    let escrow_info: Escrow = Escrow::unpack(&escrow_account.data.borrow())?;
+    msg!("unpacking escrow_info");
+    let escrow_info: Escrow = Escrow::unpack_unchecked(&escrow_account.data.borrow())?;
 
     if escrow_info.temp_token_account_pubkey != *pda_temp_token_account.key {
       return Err(ProgramError::InvalidAccountData);
@@ -190,6 +191,7 @@ impl Processor {
 
     let token_program = next_account_info(account_info_iter)?;
 
+    msg!("Start transfer");
     let transfer_to_initializer_instruction = spl_token::instruction::transfer(
       token_program.key,
       taker_sending_token_account.key,
@@ -221,6 +223,7 @@ impl Processor {
       pda_temp_token_account_info.amount,
     )?;
 
+    msg!("Start transfer to taker");
     // Signer seeds to let pda invoke program as pda does not own private key
     let signers_seeds = &["escrow".as_bytes(), program_id.as_ref(), &[bump_seed]];
     // transfer tokens to taker's receive token account
@@ -235,6 +238,7 @@ impl Processor {
       &[signers_seeds],
     )?;
 
+    msg!("Close Account");
     let close_pda_temp_account_instruction = spl_token::instruction::close_account(
       token_program.key,
       pda_temp_token_account.key,
