@@ -69,6 +69,12 @@ The command above will generate `solanaprogram-keypair.json` which will be used 
 $ yarn start:escrow
 ```
 
+Escrow Native Mint(Wrapped SOL)
+
+```
+$ yarn start:escrow-native-mint
+```
+
 ### Test Metadata
 
 ```

@@ -6,6 +6,7 @@
   "scripts": {
     "start:metadata": "ts-node -r dotenv/config client/metadata.ts",
     "start:escrow": "ts-node -r dotenv/config client/escrow.ts",
+    "start:escrow-native-mint": "ts-node -r dotenv/config client/escrow_native_mint.ts",
     "start-with-test-validator": "start-server-and-test 'solana-test-validator --reset --quiet' http://localhost:8899/health start",
     "lint": "eslint --ext .ts client/* && prettier --check \"client/**/*.ts\"",
     "lint:fix": "eslint --ext .ts client/* --fix && prettier --write \"client/**/*.ts\"",

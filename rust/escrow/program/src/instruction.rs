@@ -1,8 +1,6 @@
 use {
-  crate::{error::EscrowError::InvalidInstruction, state::EscrowReceive},
+  crate::state::EscrowReceive,
   borsh::{BorshDeserialize, BorshSerialize},
-  solana_program::program_error::ProgramError,
-  std::convert::TryInto,
 };
 
 #[repr(C)]

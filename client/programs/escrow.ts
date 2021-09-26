@@ -280,8 +280,7 @@ export async function createExchangeInstruction({
   const initializerTempToken = new PublicKey(
     decodedEscrowState.initializerTempTokenAccountPubkey,
   );
-
-  const data = new Escrowdata(new BN(expectedTakerReceiveAmount, 10, 'le'));
+  const data = new Escrowdata(new BN(expectedTakerReceiveAmount));
   const value = new TradeEscrowdataArgs({ data });
   const txnData = Buffer.from(serialize(TRADE_ESCROW_SCHEMA, value));
 

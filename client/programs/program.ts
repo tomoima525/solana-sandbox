@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { deserializeUnchecked, serialize } from 'borsh';
-import { Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
+import { NATIVE_MINT, Token, TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import {
   Connection,
   PublicKey,
@@ -165,6 +165,32 @@ export async function createMintTokenAccount({
   return [account, mintToken];
 }
 
+/**
+ * Create NativeMintTokenAccount
+ * Token Account that holds amounts to send to
+ * owner: payer(initializer)
+ * authorizer: payer(initializer)
+ * amount: amount of lamports to wrap
+ */
+export async function createNativeMintTokenAccount({
+  connection,
+  payer,
+  amount,
+}: {
+  connection: Connection;
+  payer: Signer;
+  amount: number;
+}): Promise<[PublicKey, Token]> {
+  const mintTokenAccount = await Token.createWrappedNativeAccount(
+    connection,
+    TOKEN_PROGRAM_ID,
+    payer.publicKey,
+    payer,
+    amount,
+  );
+  const mintToken = new Token(connection, NATIVE_MINT, TOKEN_PROGRAM_ID, payer);
+  return [mintTokenAccount, mintToken];
+}
 // eslint-disable-next-line no-control-regex
 const METADATA_REPLACE = new RegExp('\u0000', 'g');
 export async function readMetaData({
