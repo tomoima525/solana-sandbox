@@ -46,7 +46,6 @@ impl Processor {
     accounts: &[AccountInfo],
     instruction_data: &[u8],
   ) -> ProgramResult {
-    //let instruction = EscrowInstruction::unpack(instruction_data)?;
     let instruction = EscrowInstruction::try_from_slice(instruction_data)?;
 
     match instruction {
@@ -57,14 +56,7 @@ impl Processor {
       EscrowInstruction::Exchange(args) => {
         msg!("Instruction: Exchange Escrow");
         Self::process_exchange(program_id, accounts, args.data.amount)
-      } // EscrowInstruction::InitEscrow { amount } => {
-        //   msg!("Instruction: Init Escrow");
-        //   Self::process_init_escrow(program_id, accounts, amount)
-        // }
-        // EscrowInstruction::Exchange { amount } => {
-        //   msg!("Instruction: Init Escrow");
-        //   Self::process_exchange(program_id, accounts, amount)
-        // }
+      }
     }
   }
 
@@ -162,6 +154,11 @@ impl Processor {
     // Find a valid program address and its corresponding bump seed which must be passed as an additional seed when calling invoke_signed
     let (pda_key, bump_seed) = Pubkey::find_program_address(escrow_seed, program_id);
 
+    msg!(
+      "amount {} pda_temp_amount {}",
+      amount,
+      pda_temp_token_account_info.amount
+    );
     if amount != pda_temp_token_account_info.amount {
       return Err(error::EscrowError::ExpectedAmountMismatch.into());
     }
