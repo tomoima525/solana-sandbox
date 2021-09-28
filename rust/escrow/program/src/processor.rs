@@ -57,6 +57,10 @@ impl Processor {
         msg!("Instruction: Exchange Escrow");
         Self::process_exchange(program_id, accounts, args.data.amount)
       }
+      EscrowInstruction::CancelEscrow() => {
+        msg!("Instruction: Cancel Escrow");
+        Self::process_cancel(program_id, accounts)
+      }
     }
   }
 
@@ -257,6 +261,78 @@ impl Processor {
 
     // Finally closing escrow account
     close_escrow_account(&initializer_main_account, &escrow_account)?;
+    Ok(())
+  }
+
+  fn process_cancel(program_id: &Pubkey, accounts: &[AccountInfo]) -> ProgramResult {
+    let account_info_iter = &mut accounts.iter();
+    let initializer_account: &AccountInfo = next_account_info(account_info_iter)?;
+    let temp_token_account: &AccountInfo = next_account_info(account_info_iter)?;
+    let temp_token_account_info: TokenAccount =
+      TokenAccount::unpack(&temp_token_account.data.borrow())?;
+    let escrow_account: &AccountInfo = next_account_info(account_info_iter)?;
+    let token_program = next_account_info(account_info_iter)?;
+    let pda_account = next_account_info(account_info_iter)?;
+
+    msg!("Validate Accounts before cancelling");
+
+    let escrow_info: Escrow = Escrow::unpack_unchecked(&escrow_account.data.borrow())?;
+
+    if escrow_info.temp_token_account_pubkey != *temp_token_account.key {
+      return Err(ProgramError::InvalidAccountData);
+    }
+
+    if escrow_info.initializer_pubkey != *initializer_account.key {
+      return Err(ProgramError::InvalidAccountData);
+    }
+
+    msg!(
+      "Transfer back to Initializer {}",
+      temp_token_account_info.amount
+    );
+    let escrow_seed = &["escrow".as_bytes(), program_id.as_ref()];
+
+    let (pda_key, bump_seed) = Pubkey::find_program_address(escrow_seed, program_id);
+    let signers_seeds = &["escrow".as_bytes(), program_id.as_ref(), &[bump_seed]];
+
+    msg!("Change temp account owner to initializer");
+    let owner_change_instruction = instruction::set_authority(
+      token_program.key,
+      temp_token_account.key,
+      Some(&initializer_account.key),
+      instruction::AuthorityType::AccountOwner,
+      &pda_key,
+      &[&pda_key],
+    )?;
+    invoke_signed(
+      &owner_change_instruction,
+      &[
+        temp_token_account.clone(),
+        initializer_account.clone(),
+        pda_account.clone(),
+        token_program.clone(),
+      ],
+      &[signers_seeds],
+    )?;
+
+    msg!("Close Temp Token Account, Escrow Account");
+    let close_temp_account_instruction = spl_token::instruction::close_account(
+      token_program.key,
+      temp_token_account.key,
+      initializer_account.key,
+      &initializer_account.key,
+      &[&initializer_account.key],
+    )?;
+
+    invoke(
+      &close_temp_account_instruction,
+      &[
+        temp_token_account.clone(),
+        initializer_account.clone(),
+        token_program.clone(),
+      ],
+    )?;
+    close_escrow_account(&initializer_account, &escrow_account)?;
     Ok(())
   }
 }
