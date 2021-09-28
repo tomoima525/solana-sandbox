@@ -18,6 +18,8 @@ import {
 } from '@solana/web3.js';
 import type { Signer } from '@solana/web3.js';
 import {
+  CancelEscrowdataArgs,
+  CANCEL_ESCROW_SCHEMA,
   InitEscrowdataArgs,
   Escrowdata,
   INIT_ESCROW_SCHEMA,
@@ -315,6 +317,64 @@ export async function createExchangeInstruction({
       },
       {
         pubkey: initializerReceivingTokenAccount,
+        isSigner: false,
+        isWritable: true,
+      },
+      { pubkey: escrowAccount, isSigner: false, isWritable: true },
+      { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+      { pubkey: pda, isSigner: false, isWritable: false },
+    ],
+  });
+}
+
+export async function createCancelInstruction({
+  connection,
+  escrowAccount,
+  initializer,
+  pda,
+  programId,
+}: {
+  connection: Connection;
+  escrowAccount: PublicKey;
+  initializer: PublicKey;
+  pda: PublicKey;
+  programId: PublicKey;
+}): Promise<TransactionInstruction> {
+  const encodedEscrowState = (
+    await connection.getAccountInfo(escrowAccount, 'singleGossip')
+  )?.data;
+  if (!encodedEscrowState) {
+    console.log('Invalid EscrowState');
+    throw new Error('Invalid Escrow State');
+  }
+  const decodedEscrowState = ESCROW_ACCOUNT_DATA_LAYOUT.decode(
+    encodedEscrowState,
+  ) as EscrowLayout;
+
+  const initializerAccount = new PublicKey(
+    decodedEscrowState.initializerPubkey,
+  );
+  if (initializer.toBase58() !== initializerAccount.toBase58()) {
+    console.log('Initializer mismatch');
+    throw new Error('Initializer mismatch');
+  }
+  const initializerTempToken = new PublicKey(
+    decodedEscrowState.initializerTempTokenAccountPubkey,
+  );
+
+  return new TransactionInstruction({
+    programId,
+    data: Buffer.from(
+      serialize(CANCEL_ESCROW_SCHEMA, new CancelEscrowdataArgs()),
+    ),
+    keys: [
+      {
+        pubkey: initializerAccount,
+        isSigner: true,
+        isWritable: false,
+      },
+      {
+        pubkey: initializerTempToken,
         isSigner: false,
         isWritable: true,
       },

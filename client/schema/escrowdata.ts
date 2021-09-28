@@ -64,3 +64,17 @@ export const TRADE_ESCROW_SCHEMA = new Map<any, any>([
     },
   ],
 ]);
+
+export class CancelEscrowdataArgs {
+  instruction = 2;
+}
+
+export const CANCEL_ESCROW_SCHEMA = new Map<any, any>([
+  [
+    CancelEscrowdataArgs,
+    {
+      kind: 'struct',
+      fields: [['instruction', 'u8']],
+    },
+  ],
+]);
