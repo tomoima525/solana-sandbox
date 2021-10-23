@@ -2,6 +2,7 @@
 members = [
   "token-metadata/program",
   "escrow/program",
+  "freeze/program",
 ]
 exclude = [
 ]

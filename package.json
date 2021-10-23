@@ -8,6 +8,7 @@
     "start:escrow": "ts-node -r dotenv/config client/escrow.ts",
     "start:escrow-native-mint": "ts-node -r dotenv/config client/escrow_native_mint.ts",
     "start:escrow-cancel": "ts-node -r dotenv/config client/escrow_cancel.ts",
+    "start:freeze-account": "ts-node -r dotenv/config client/freeze.ts",
     "start-with-test-validator": "start-server-and-test 'solana-test-validator --reset --quiet' http://localhost:8899/health start",
     "lint": "eslint --ext .ts client/* && prettier --check \"client/**/*.ts\"",
     "lint:fix": "eslint --ext .ts client/* --fix && prettier --write \"client/**/*.ts\"",
@@ -44,6 +45,7 @@
     "borsh": "^0.6.0",
     "dotenv": "^10.0.0",
     "mz": "^2.7.0",
+    "superstruct": "^0.15.3",
     "yaml": "^1.10.2"
   }
 }

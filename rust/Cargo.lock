@@ -775,6 +775,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "freeze"
+version = "0.1.0"
+dependencies = [
+ "arrayref",
+ "borsh",
+ "borsh-derive",
+ "num-derive",
+ "num-traits",
+ "num_enum",
+ "solana-program",
+ "solana-program-test",
+ "solana-sdk",
+ "spl-token",
+ "thiserror",
+]
+
+[[package]]
 name = "fuchsia-zircon"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
