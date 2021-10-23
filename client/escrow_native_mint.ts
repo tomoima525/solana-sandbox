@@ -99,6 +99,9 @@ async function main() {
   //   taker,
   // );
   console.log('Created taker Mint', takerMint.publicKey.toBase58());
+  console.log('Created taker MintAccount', takerMintTokenAccount.toBase58());
+  const validateAccount = await connection.getAccountInfo(takerMint.publicKey);
+  console.log('Validate', validateAccount?.owner.toBase58());
 
   console.log('\n\n============ starting escrow ===========\n');
   console.log(

@@ -2,6 +2,8 @@ import { Connection, PublicKey } from '@solana/web3.js';
 import { Token } from '@solana/spl-token';
 import BN from 'bn.js';
 import { EscrowLayout, ESCROW_ACCOUNT_DATA_LAYOUT } from './escrowLayout';
+import { create } from 'superstruct';
+import { TokenAccount } from '../model/token';
 
 export const viewAccountInfo = async (
   connection: Connection,
@@ -14,6 +16,22 @@ export const viewAccountInfo = async (
     `Account ${name}\n lamports:${info?.lamports || 0}\n owner: ${
       info?.owner?.toBase58() || ''
     }`,
+  );
+};
+
+export const viewTokenAccountInfo = async (
+  connection: Connection,
+  account: PublicKey,
+): Promise<void> => {
+  const info = await connection.getParsedAccountInfo(account);
+  const tokenAccount = create(info.value?.data, TokenAccount);
+
+  console.log(
+    `TokenAccount ${account.toBase58()} 
+      owner: ${tokenAccount.parsed.info.owner.toBase58()}
+      tokenAmount: ${tokenAccount.parsed.info.tokenAmount.uiAmountString}
+      state: ${tokenAccount.parsed.info.state}
+      `,
   );
 };
 

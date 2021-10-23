@@ -37,7 +37,7 @@ export async function mintToken({
     connection,
     payer,
     payer.publicKey,
-    null,
+    payer.publicKey,
     decimals,
     TOKEN_PROGRAM_ID,
   );
