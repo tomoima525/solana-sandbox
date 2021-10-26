@@ -15,6 +15,7 @@ Currently implemented under `rust` directory
 - Idea is from [paulx's blog](https://paulx.dev/blog/2021/01/14/programming-on-solana-an-introduction) but following a real-world usecase
   - Use wallets to manage Accounts
   - Use Associated Token Account to transfer tokens
+![](https://s3.us-west-2.amazonaws.com/secure.notion-static.com/5d393a2e-6202-4ebc-abae-efc0b6978c45/Screen_Shot_2021-09-24_at_12.11.02_PM.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAT73L2G45O3KS52Y5%2F20211026%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20211026T232424Z&X-Amz-Expires=86400&X-Amz-Signature=c5c9a2c3f6067e99a5e3ab2de1fe2af363fe97eca15cd799a661f604f9b2c0ad&X-Amz-SignedHeaders=host&response-content-disposition=filename%20%3D%22Screen%2520Shot%25202021-09-24%2520at%252012.11.02%2520PM.png%22)
 
 ## Client
 
